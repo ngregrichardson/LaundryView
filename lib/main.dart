@@ -25,13 +25,14 @@ class App extends StatelessWidget {
           screen = Locations();
           break;
         case RoomsRoute:
-          screen = Rooms(arguments['school_desc_key']);
+          screen =
+              Rooms(arguments['school_desc_key'], arguments['school_name']);
           break;
         case RoomDetailRoute:
           screen = RoomDetail(
-              arguments['school_desc_key'],
-              arguments['laundry_room_location'],
-              arguments['laundry_room_name']);
+              school_desc_key: arguments['school_desc_key'],
+              laundry_room_location: arguments['laundry_room_location'],
+              laundry_room_name: arguments['laundry_room_name']);
           break;
         default:
           return null;

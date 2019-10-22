@@ -9,8 +9,9 @@ import 'package:http/http.dart' as http;
 
 class Rooms extends StatelessWidget {
   final String _school_desc_key;
+  final String _school_name;
 
-  Rooms(this._school_desc_key);
+  Rooms(this._school_desc_key, this._school_name);
 
   @override
   Widget build(BuildContext context) {
