@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'screens/locations/locations.dart';
 import 'screens/rooms/rooms.dart';
+import 'screens/roomDetail/roomDetail.dart';
 
 const LocationsRoute = '/';
 const RoomsRoute = '/rooms';
+const RoomDetailRoute = '/roomDetail';
 
 class App extends StatelessWidget {
   @override
@@ -24,6 +26,12 @@ class App extends StatelessWidget {
           break;
         case RoomsRoute:
           screen = Rooms(arguments['school_desc_key']);
+          break;
+        case RoomDetailRoute:
+          screen = RoomDetail(
+              arguments['school_desc_key'],
+              arguments['laundry_room_location'],
+              arguments['laundry_room_name']);
           break;
         default:
           return null;

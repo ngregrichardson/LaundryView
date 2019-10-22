@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../main.dart';
+import 'package:laundryview/main.dart';
+import './text_section.dart';
 import '../../models/room.dart';
 import '../../endpoint.dart';
 import 'dart:async';
@@ -35,14 +35,27 @@ class Rooms extends StatelessWidget {
 
   Widget _itemBuilder(BuildContext context, Room room) {
     return GestureDetector(
+      onTap: () {
+        _onLocationTap(
+            context, room.laundry_room_location, room.laundry_room_name);
+      },
       key: Key('room_list_item_${room.laundry_room_location}'),
       child: Container(
         height: 50.0,
         child: Stack(
-          children: [Text(room.laundry_room_name)],
+          children: [TextSection(room.laundry_room_name)],
         ),
       ),
     );
+  }
+
+  _onLocationTap(BuildContext context, String laundry_room_location,
+      String laundry_room_name) {
+    Navigator.pushNamed(context, RoomDetailRoute, arguments: {
+      "school_desc_key": _school_desc_key,
+      "laundry_room_location": laundry_room_location,
+      "laundry_room_name": laundry_room_name
+    });
   }
 
   static Future<List<Room>> fetchAll(String school_desc_key) async {

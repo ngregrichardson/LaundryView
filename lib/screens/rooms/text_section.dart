@@ -13,7 +13,7 @@ class TextSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-            padding: const EdgeInsets.fromLTRB(_hPad, 32.0, _hPad, 4.0),
+            padding: const EdgeInsets.fromLTRB(_hPad, 20.0, _hPad, 4.0),
             child: Text(_title, style: Theme.of(context).textTheme.title)),
       ],
     );

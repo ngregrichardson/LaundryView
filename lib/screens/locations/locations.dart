@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../main.dart';
 import '../../models/location.dart';
+import '../../screens/rooms/text_section.dart';
 import '../../endpoint.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -77,7 +78,7 @@ class LocationsState extends State<Locations> {
       itemCount: locations == null ? 0 : filteredLocations.length,
       itemBuilder: (BuildContext context, int index) {
         return new ListTile(
-          title: Text(filteredLocations[index].school_name),
+          title: TextSection(filteredLocations[index].school_name),
           onTap: () {
             _onLocationTap(context, filteredLocations[index].school_desc_key);
           },
