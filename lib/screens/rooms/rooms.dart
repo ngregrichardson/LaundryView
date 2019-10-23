@@ -17,7 +17,7 @@ class Rooms extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Rooms'),
+        title: Text(_school_name),
       ),
       body: FutureBuilder(
         future: fetchAll(_school_desc_key),

@@ -11,7 +11,7 @@ class Machine {
     appliance_desc = data["appliance_desc"];
     type = data["appliance_type"];
     status = data["time_left_lite"];
-    avg_run_time = data["avg_run_time"];
+    avg_run_time = data["average_run_time"];
     time_remaining = data["time_remaining"];
   }
 }

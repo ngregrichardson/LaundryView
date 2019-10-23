@@ -46,6 +46,44 @@ class LocationsState extends State<Locations> {
     return Scaffold(
       appBar: _buildBar(context),
       body: Container(child: _buildList()),
+      drawer: Drawer(
+        child: Column(children: <Widget>[
+          UserAccountsDrawerHeader(
+            accountEmail: Text("v1.0"),
+            accountName: Text("LaundryView"),
+          ),
+          ListTile(
+              leading: Icon(Icons.face),
+              title: Text("About"),
+              onTap: () {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return SimpleDialog(
+                        title: Text("About LaundryView"),
+                        children: <Widget>[
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
+                            child: Text(
+                                "After trying out some other LaundryView apps when I got to college, I eventually found some shortcomings to all of them. To fix that, I decided to create my own. Use LaundryView to see laundry progress and get notifications when your laundry is done."),
+                          ),
+                        ],
+                      );
+                    });
+              }),
+          ListTile(
+              leading: Icon(Icons.settings),
+              title: Text("Settings"),
+              onTap: () {
+                _onSettingsTap(context);
+              }),
+          Divider(),
+          ListTile(leading: Icon(Icons.help), title: Text("Help")),
+          ListTile(leading: Icon(Icons.email), title: Text("Contact us")),
+          ListTile(
+              leading: Icon(Icons.announcement), title: Text("Report a bug")),
+        ]),
+      ),
       resizeToAvoidBottomPadding: false,
     );
   }
@@ -54,10 +92,31 @@ class LocationsState extends State<Locations> {
     return new AppBar(
       centerTitle: true,
       title: _appBarTitle,
-      leading: new IconButton(
-        icon: _searchIcon,
-        onPressed: _searchPressed,
-      ),
+      actions: <Widget>[
+        new IconButton(
+            icon: _searchIcon,
+            onPressed: () {
+              setState(() {
+                if (this._searchIcon.icon == Icons.search) {
+                  this._searchIcon = new Icon(Icons.close);
+                  this._appBarTitle = new TextField(
+                      controller: _filter,
+                      decoration: new InputDecoration(
+                          prefixIcon:
+                              new Icon(Icons.search, color: Colors.white),
+                          hintText: "Search...",
+                          hintStyle: new TextStyle(color: Colors.white)));
+                } else {
+                  setState(() {
+                    this._searchIcon = new Icon(Icons.search);
+                    this._appBarTitle = new Text('Locations');
+                    filteredLocations = locations;
+                    _filter.clear();
+                  });
+                }
+              });
+            }),
+      ],
     );
   }
 
@@ -80,34 +139,24 @@ class LocationsState extends State<Locations> {
         return new ListTile(
           title: TextSection(filteredLocations[index].school_name),
           onTap: () {
-            _onLocationTap(context, filteredLocations[index].school_desc_key);
+            _onLocationTap(context, filteredLocations[index].school_desc_key,
+                filteredLocations[index].school_name);
           },
         );
       },
     );
   }
 
-  void _searchPressed() {
-    setState(() {
-      if (this._searchIcon.icon == Icons.search) {
-        this._searchIcon = new Icon(Icons.close);
-        this._appBarTitle = new TextField(
-          controller: _filter,
-          decoration: new InputDecoration(
-              prefixIcon: new Icon(Icons.search), hintText: 'Search...'),
-        );
-      } else {
-        this._searchIcon = new Icon(Icons.search);
-        this._appBarTitle = new Text('Locations');
-        filteredLocations = locations;
-        _filter.clear();
-      }
+  _onLocationTap(
+      BuildContext context, String school_desc_key, String school_name) {
+    Navigator.pushNamed(context, RoomsRoute, arguments: {
+      "school_desc_key": school_desc_key,
+      "school_name": school_name
     });
   }
 
-  _onLocationTap(BuildContext context, String school_desc_key) {
-    Navigator.pushNamed(context, RoomsRoute,
-        arguments: {"school_desc_key": school_desc_key});
+  _onSettingsTap(BuildContext context) {
+    Navigator.pushNamed(context, SettingsRoute);
   }
 
   Future<List<Location>> fetchAll() async {
