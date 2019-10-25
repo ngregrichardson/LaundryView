@@ -106,11 +106,15 @@ class LocationsState extends State<Locations> {
                 if (this._searchIcon.icon == Icons.search) {
                   this._searchIcon = new Icon(Icons.close);
                   this._appBarTitle = new TextField(
+                      textAlignVertical: TextAlignVertical.center,
+                      style: new TextStyle(color: Colors.white),
                       controller: _filter,
                       decoration: new InputDecoration(
+                          border: InputBorder.none,
                           prefixIcon:
                               new Icon(Icons.search, color: Colors.white),
                           hintText: "Search...",
+                          labelStyle: new TextStyle(color: Colors.white),
                           hintStyle: new TextStyle(color: Colors.white)));
                 } else {
                   setState(() {

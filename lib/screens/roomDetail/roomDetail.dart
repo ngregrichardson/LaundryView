@@ -42,6 +42,19 @@ class RoomDetailState extends State<RoomDetail>
   DatabaseHelper databaseHelper = DatabaseHelper();
   List<Favorite> favoritesList;
 
+  Map<int, Color> color = {
+    50: Color.fromRGBO(136, 14, 79, .1),
+    100: Color.fromRGBO(136, 14, 79, .2),
+    200: Color.fromRGBO(136, 14, 79, .3),
+    300: Color.fromRGBO(136, 14, 79, .4),
+    400: Color.fromRGBO(136, 14, 79, .5),
+    500: Color.fromRGBO(136, 14, 79, .6),
+    600: Color.fromRGBO(136, 14, 79, .7),
+    700: Color.fromRGBO(136, 14, 79, .8),
+    800: Color.fromRGBO(136, 14, 79, .9),
+    900: Color.fromRGBO(136, 14, 79, 1),
+  };
+
   initializeNotifications() async {
     var initializeAndroid = AndroidInitializationSettings('app_icon');
     var initializeIOS = IOSInitializationSettings();
@@ -56,13 +69,6 @@ class RoomDetailState extends State<RoomDetail>
     WidgetsBinding.instance.addObserver(this);
     SharedPreferences.getInstance().then((SharedPreferences sp) {
       prefs = sp;
-      if (prefs.getBool('setup') == null) {
-        prefs.setBool('show_progress_bars', true);
-        prefs.setBool('dark_mode', false);
-        prefs.setBool('funky_mode', false);
-        prefs.setBool('ultra_funky_mode', false);
-        prefs.setBool('setup', true);
-      }
     });
     _tabController = new TabController(vsync: this, length: 2);
     _refreshController = RefreshController();
@@ -137,7 +143,11 @@ class RoomDetailState extends State<RoomDetail>
               children: <Widget>[
                 new SmartRefresher(
                   enablePullDown: true,
-                  header: BezierCircleHeader(),
+                  header: BezierCircleHeader(
+                    circleColor: prefs.getBool('dark_mode')
+                        ? MaterialColor(0xFFCF57E4, color)
+                        : Colors.white,
+                  ),
                   controller: _refreshController,
                   onRefresh: _onRefresh,
                   child: ListView.builder(
@@ -147,7 +157,11 @@ class RoomDetailState extends State<RoomDetail>
                 ),
                 new SmartRefresher(
                   enablePullDown: true,
-                  header: BezierCircleHeader(),
+                  header: BezierCircleHeader(
+                    circleColor: prefs.getBool('dark_mode')
+                        ? MaterialColor(0xFFCF57E4, color)
+                        : Colors.white,
+                  ),
                   controller: _refreshController,
                   onRefresh: _onRefresh,
                   child: ListView.builder(
@@ -192,8 +206,12 @@ class RoomDetailState extends State<RoomDetail>
                                   percent: (machine.avg_run_time -
                                           machine.time_remaining) /
                                       (machine.avg_run_time),
-                                  backgroundColor: Colors.grey[400],
-                                  progressColor: Colors.blue,
+                                  backgroundColor: prefs.getBool('dark_mode')
+                                      ? Colors.white
+                                      : Colors.grey[400],
+                                  progressColor: prefs.getBool('dark_mode')
+                                      ? MaterialColor(0xFFCF57E4, color)
+                                      : Colors.blue,
                                 )
                               : Container(),
                         )
@@ -282,7 +300,12 @@ class RoomDetailState extends State<RoomDetail>
     if (favoritesList.any((fav) {
       return fav.laundry_room_location == widget.laundry_room_location;
     })) {
-      return Icon(Icons.star);
+      return Icon(
+        Icons.star,
+        color: prefs.getBool('dark_mode')
+            ? MaterialColor(0xFFCF57E4, color)
+            : Colors.white,
+      );
     }
     return Icon(Icons.star_border);
   }
