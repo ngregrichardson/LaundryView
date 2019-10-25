@@ -6,6 +6,7 @@ import '../../endpoint.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class Locations extends StatefulWidget {
   @override
@@ -85,9 +86,20 @@ class LocationsState extends State<Locations> {
               }),
           Divider(),
           ListTile(leading: Icon(Icons.help), title: Text("Help")),
-          ListTile(leading: Icon(Icons.email), title: Text("Contact us")),
           ListTile(
-              leading: Icon(Icons.announcement), title: Text("Report a bug")),
+            leading: Icon(Icons.email),
+            title: Text("Contact us"),
+            onTap: () {
+              _onContactTap(context);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.announcement),
+            title: Text("Report a bug"),
+            onTap: () {
+              _onReportBugTap(context);
+            },
+          ),
         ]),
       ),
       resizeToAvoidBottomPadding: false,
@@ -171,6 +183,24 @@ class LocationsState extends State<Locations> {
 
   _onSettingsTap(BuildContext context) {
     Navigator.pushNamed(context, SettingsRoute);
+  }
+
+  _onContactTap(BuildContext context) async {
+    const url = 'mailto:contact@nrdesign.xyz';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch url';
+    }
+  }
+
+  _onReportBugTap(BuildContext context) async {
+    const url = 'https://github.com/ngregrichardson/LaundryView/issues';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch url';
+    }
   }
 
   Future<List<Location>> fetchAll() async {
