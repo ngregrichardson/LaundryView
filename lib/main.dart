@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/locations/locations.dart';
 import 'screens/rooms/rooms.dart';
+import 'screens/favorites/favorites.dart';
 import 'screens/roomDetail/roomDetail.dart';
 import 'screens/settings/settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,7 @@ import 'package:dynamic_theme/dynamic_theme.dart';
 const LocationsRoute = '/';
 const RoomsRoute = '/rooms';
 const RoomDetailRoute = '/roomDetail';
+const FavoritesRoute = '/favorites';
 const SettingsRoute = '/settings';
 
 class App extends StatefulWidget {
@@ -65,6 +67,9 @@ class AppState extends State<App> {
               school_desc_key: arguments['school_desc_key'],
               laundry_room_location: arguments['laundry_room_location'],
               laundry_room_name: arguments['laundry_room_name']);
+          break;
+        case FavoritesRoute:
+          screen = Favorites();
           break;
         case SettingsRoute:
           screen = Settings();

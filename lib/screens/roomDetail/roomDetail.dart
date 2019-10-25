@@ -1,3 +1,4 @@
+import 'package:laundryview/models/favorite.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -6,6 +7,8 @@ import 'package:flutter/material.dart';
 import '../../endpoint.dart';
 import '../../models/machine.dart';
 import '../../models/alarm.dart';
+import 'package:sqflite/sqflite.dart';
+import '../../database_helper.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -36,6 +39,8 @@ class RoomDetailState extends State<RoomDetail>
   RefreshController _refreshController;
   bool _loaded = false;
   List<Machine> machines = [];
+  DatabaseHelper databaseHelper = DatabaseHelper();
+  List<Favorite> favoritesList;
 
   initializeNotifications() async {
     var initializeAndroid = AndroidInitializationSettings('app_icon');
@@ -93,6 +98,10 @@ class RoomDetailState extends State<RoomDetail>
 
   @override
   Widget build(BuildContext context) {
+    if (favoritesList == null) {
+      favoritesList = List<Favorite>();
+      updateFavorites();
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.laundry_room_name),
@@ -103,6 +112,16 @@ class RoomDetailState extends State<RoomDetail>
             new Tab(icon: new Icon(Icons.wb_sunny)),
           ],
         ),
+        actions: <Widget>[
+          new Builder(builder: (BuildContext context) {
+            return IconButton(
+              icon: _favoritesIcon(),
+              onPressed: () {
+                toggleFavorite(context);
+              },
+            );
+          }),
+        ],
       ),
       body: Builder(
         builder: (BuildContext context) {
@@ -219,6 +238,71 @@ class RoomDetailState extends State<RoomDetail>
         ],
       ),
     );
+  }
+
+  void toggleFavorite(BuildContext context) {
+    final Future<Database> dbFuture = databaseHelper.initializeDatabase();
+    if (favoritesList.any((fav) {
+      return fav.laundry_room_location == widget.laundry_room_location;
+    })) {
+      dbFuture.then((database) {
+        databaseHelper
+            .deleteFavorite(widget.laundry_room_location)
+            .then((result) {
+          if (result != 0) {
+            _showSnackBar(context,
+                '${widget.laundry_room_name} has been removed from favorites');
+            updateFavorites();
+          } else {
+            _showSnackBar(context,
+                'There was a problem removing ${widget.laundry_room_name} from favorites');
+          }
+        });
+      });
+    } else {
+      dbFuture.then((database) {
+        databaseHelper
+            .insertFavorite(Favorite(widget.school_desc_key,
+                widget.laundry_room_location, widget.laundry_room_name))
+            .then((result) {
+          if (result != 0) {
+            _showSnackBar(context,
+                '${widget.laundry_room_name} has been added to favorites');
+            updateFavorites();
+          } else {
+            _showSnackBar(context,
+                'There was a problem adding ${widget.laundry_room_name} to favorites');
+          }
+        });
+      });
+    }
+  }
+
+  Icon _favoritesIcon() {
+    if (favoritesList.any((fav) {
+      return fav.laundry_room_location == widget.laundry_room_location;
+    })) {
+      return Icon(Icons.star);
+    }
+    return Icon(Icons.star_border);
+  }
+
+  void updateFavorites() {
+    final Future<Database> dbFuture = databaseHelper.initializeDatabase();
+    dbFuture.then((database) {
+      Future<List<Favorite>> favoritesListFuture =
+          databaseHelper.getFavorites();
+      favoritesListFuture.then((favoriteList) {
+        setState(() {
+          this.favoritesList = favoriteList;
+        });
+      });
+    });
+  }
+
+  _showSnackBar(BuildContext context, String message) {
+    final snackBar = SnackBar(content: Text(message));
+    Scaffold.of(context).showSnackBar(snackBar);
   }
 
   Future _setAlarm(String name, String appliance_desc_key,

@@ -72,6 +72,12 @@ class LocationsState extends State<Locations> {
                     });
               }),
           ListTile(
+              leading: Icon(Icons.stars),
+              title: Text("Favorites"),
+              onTap: () {
+                _onFavoritesTap(context);
+              }),
+          ListTile(
               leading: Icon(Icons.settings),
               title: Text("Settings"),
               onTap: () {
@@ -153,6 +159,10 @@ class LocationsState extends State<Locations> {
       "school_desc_key": school_desc_key,
       "school_name": school_name
     });
+  }
+
+  _onFavoritesTap(BuildContext context) {
+    Navigator.pushNamed(context, FavoritesRoute);
   }
 
   _onSettingsTap(BuildContext context) {
