@@ -1,5 +1,6 @@
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import '../../endpoint.dart';
@@ -28,10 +29,13 @@ class RoomDetail extends StatefulWidget {
 class RoomDetailState extends State<RoomDetail>
     with SingleTickerProviderStateMixin {
   SharedPreferences prefs;
-  TabController controller;
+  TabController _tabController;
   List<Alarm> alarms = [];
   FlutterLocalNotificationsPlugin localNotificationsPlugin =
       new FlutterLocalNotificationsPlugin();
+  RefreshController _refreshController;
+  bool _loaded = false;
+  List<Machine> machines = [];
 
   initializeNotifications() async {
     var initializeAndroid = AndroidInitializationSettings('app_icon');
@@ -54,13 +58,25 @@ class RoomDetailState extends State<RoomDetail>
         prefs.setBool('setup', true);
       }
     });
-    controller = new TabController(vsync: this, length: 2);
+    _tabController = new TabController(vsync: this, length: 2);
+    _refreshController = RefreshController();
     initializeNotifications();
+    _onRefresh();
+  }
+
+  _onRefresh() async {
+    machines =
+        await getMachines(widget.school_desc_key, widget.laundry_room_location);
+    _refreshController.refreshCompleted();
+    setState(() {
+      _loaded = true;
+    });
   }
 
   @override
   void dispose() {
-    controller.dispose();
+    _tabController.dispose();
+    _refreshController.dispose();
     super.dispose();
   }
 
@@ -70,33 +86,46 @@ class RoomDetailState extends State<RoomDetail>
       appBar: AppBar(
         title: Text(widget.laundry_room_name),
         bottom: new TabBar(
-          controller: controller,
+          controller: _tabController,
           tabs: <Widget>[
             new Tab(icon: new Icon(Icons.broken_image)),
             new Tab(icon: new Icon(Icons.wb_sunny)),
           ],
         ),
       ),
-      body: FutureBuilder(
-        future: fetchAll(widget.school_desc_key, widget.laundry_room_location),
-        builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
-          if (!snapshot.hasData) {
-            return new Container();
+      body: Builder(
+        builder: (BuildContext context) {
+          if (!_loaded) {
+            return new Container(
+                child: new Center(child: new CircularProgressIndicator()));
           }
-          List washers =
-              snapshot.data.where((mach) => mach.type == 'W').toList();
-          List dryers =
-              snapshot.data.where((mach) => mach.type == 'D').toList();
-          return new TabBarView(controller: controller, children: <Widget>[
-            new ListView.builder(
-                itemCount: washers.length,
-                itemBuilder: (context, index) =>
-                    _listBuilder(context, washers[index])),
-            new ListView.builder(
-                itemCount: dryers.length,
-                itemBuilder: (context, index) =>
-                    _listBuilder(context, dryers[index])),
-          ]);
+          List washers = machines.where((mach) => mach.type == 'W').toList();
+          List dryers = machines.where((mach) => mach.type == 'D').toList();
+          return new TabBarView(
+              physics: NeverScrollableScrollPhysics(),
+              controller: _tabController,
+              children: <Widget>[
+                new SmartRefresher(
+                  enablePullDown: true,
+                  header: BezierCircleHeader(),
+                  controller: _refreshController,
+                  onRefresh: _onRefresh,
+                  child: ListView.builder(
+                      itemCount: washers.length,
+                      itemBuilder: (context, index) =>
+                          _listBuilder(context, washers[index])),
+                ),
+                new SmartRefresher(
+                  enablePullDown: true,
+                  header: BezierCircleHeader(),
+                  controller: _refreshController,
+                  onRefresh: _onRefresh,
+                  child: ListView.builder(
+                      itemCount: dryers.length,
+                      itemBuilder: (context, index) =>
+                          _listBuilder(context, dryers[index])),
+                ),
+              ]);
         },
       ),
     );
@@ -196,7 +225,7 @@ class RoomDetailState extends State<RoomDetail>
         platformChannel);
   }
 
-  Future<List<Machine>> fetchAll(
+  Future<List<Machine>> getMachines(
       String school_desc_key, String laundry_room_location) async {
     var url = Endpoint.uri('/currentRoomData', queryParameters: {
       'school_desc_key': school_desc_key,
