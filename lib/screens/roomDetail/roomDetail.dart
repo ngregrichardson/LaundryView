@@ -27,7 +27,7 @@ class RoomDetail extends StatefulWidget {
 }
 
 class RoomDetailState extends State<RoomDetail>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   SharedPreferences prefs;
   TabController _tabController;
   List<Alarm> alarms = [];
@@ -48,6 +48,7 @@ class RoomDetailState extends State<RoomDetail>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     SharedPreferences.getInstance().then((SharedPreferences sp) {
       prefs = sp;
       if (prefs.getBool('setup') == null) {
@@ -77,7 +78,17 @@ class RoomDetailState extends State<RoomDetail>
   void dispose() {
     _tabController.dispose();
     _refreshController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.resumed) {
+      _onRefresh();
+    }
   }
 
   @override
