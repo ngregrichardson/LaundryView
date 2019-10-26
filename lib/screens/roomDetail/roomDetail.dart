@@ -81,6 +81,12 @@ class RoomDetailState extends State<RoomDetail>
         await getMachines(widget.school_desc_key, widget.laundry_room_location);
     _refreshController.refreshCompleted();
     setState(() {
+      for (var i = 0; i < alarms.length; i++) {
+        if (alarms[i].end_time.isBefore(new DateTime.now())) {
+          alarms.remove(alarms[i]);
+          i--;
+        }
+      }
       _loaded = true;
     });
   }
@@ -176,7 +182,6 @@ class RoomDetailState extends State<RoomDetail>
   }
 
   Widget _listBuilder(BuildContext context, Machine machine) {
-    alarms.add(Alarm(false, machine.appliance_desc_key, null));
     return Container(
       padding: const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 5.0),
       height: 75.0,
@@ -223,29 +228,28 @@ class RoomDetailState extends State<RoomDetail>
             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               machine.status.toLowerCase().contains("remaining")
                   ? Switch(
-                      value: alarms
-                          .firstWhere((alarm) =>
+                      value: alarms.any((alarm) =>
                               alarm.appliance_desc_key ==
                               machine.appliance_desc_key)
-                          .active,
-                      onChanged: (val) async {
-                        this.setState(() {
-                          alarms
-                              .firstWhere((alarm) =>
-                                  alarm.appliance_desc_key ==
-                                  machine.appliance_desc_key)
-                              .active = val;
-                        });
+                          ? true
+                          : false,
+                      onChanged: (val) {
                         if (val) {
-                          await _setAlarm(
-                              (machine.type == 'W' ? 'Washer ' : 'Dryer ') +
+                          _setAlarm(
+                                  (machine.type == 'W' ? 'Washer ' : 'Dryer ') +
+                                      machine.appliance_desc,
+                                  machine.appliance_desc_key,
                                   machine.appliance_desc,
-                              machine.appliance_desc_key,
-                              machine.appliance_desc,
-                              machine.time_remaining);
-                          Scaffold.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  'Alarm set for ${(machine.type == "W" ? "Washer " : "Dryer ") + machine.appliance_desc}')));
+                                  machine.time_remaining)
+                              .then((res) {
+                            _showSnackBar(context,
+                                'Alarm set for ${(machine.type == "W" ? "Washer " : "Dryer ") + machine.appliance_desc}');
+                          });
+                        } else {
+                          _removeAlarm(machine.appliance_desc_key).then((res) {
+                            _showSnackBar(context,
+                                'Alarm removed for ${(machine.type == "W" ? "Washer " : "Dryer ") + machine.appliance_desc}');
+                          });
                         }
                       },
                       activeTrackColor: Colors.lightGreenAccent,
@@ -335,12 +339,32 @@ class RoomDetailState extends State<RoomDetail>
         importance: Importance.Max, priority: Priority.Max);
     var iosChannel = IOSNotificationDetails();
     var platformChannel = NotificationDetails(androidChannel, iosChannel);
-    localNotificationsPlugin.schedule(
-        int.parse(appliance_desc),
-        '$name is done!',
-        'The laundry in $name is done!',
-        new DateTime.now().add(new Duration(minutes: time_remaining)),
-        platformChannel);
+    localNotificationsPlugin
+        .schedule(
+            int.parse(appliance_desc_key),
+            '$name is done!',
+            'The laundry in $name is done!',
+            new DateTime.now()
+                .add(new Duration(seconds: 10)), //minutes: time_remaining)),
+            platformChannel)
+        .then((res) {
+      setState(() {
+        alarms.add(Alarm(
+            appliance_desc_key,
+            new DateTime.now().add(new Duration(
+                seconds: 10)))); //new Duration(minutes: time_remaining))));
+      });
+    });
+  }
+
+  Future _removeAlarm(String appliance_desc_key) async {
+    localNotificationsPlugin.cancel(int.parse(appliance_desc_key)).then((res) {
+      setState(() {
+        alarms.removeWhere((alarm) {
+          return alarm.appliance_desc_key == appliance_desc_key;
+        });
+      });
+    });
   }
 
   Future<List<Machine>> getMachines(
