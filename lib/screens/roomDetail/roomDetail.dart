@@ -33,7 +33,6 @@ class RoomDetailState extends State<RoomDetail>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   SharedPreferences prefs;
   TabController _tabController;
-  List<Alarm> alarms = [];
   FlutterLocalNotificationsPlugin localNotificationsPlugin =
       new FlutterLocalNotificationsPlugin();
   RefreshController _refreshController;
@@ -41,6 +40,7 @@ class RoomDetailState extends State<RoomDetail>
   List<Machine> machines = [];
   DatabaseHelper databaseHelper = DatabaseHelper();
   List<Favorite> favoritesList;
+  List<Alarm> alarms;
 
   Map<int, Color> color = {
     50: Color.fromRGBO(136, 14, 79, .1),
@@ -104,7 +104,7 @@ class RoomDetailState extends State<RoomDetail>
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.resumed) {
-      _onRefresh();
+      _refreshController.requestRefresh();
     }
   }
 
@@ -113,6 +113,10 @@ class RoomDetailState extends State<RoomDetail>
     if (favoritesList == null) {
       favoritesList = List<Favorite>();
       updateFavorites();
+    }
+    if (alarms == null) {
+      alarms = List<Alarm>();
+      updateAlarms();
     }
     return Scaffold(
       appBar: AppBar(
@@ -227,7 +231,7 @@ class RoomDetailState extends State<RoomDetail>
             flex: 1,
             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               machine.status.toLowerCase().contains("remaining")
-                  ? Switch(
+                  ? Row(children: [Icon(Icons.access_alarm), Switch(
                       value: alarms.any((alarm) =>
                               alarm.appliance_desc_key ==
                               machine.appliance_desc_key)
@@ -236,24 +240,20 @@ class RoomDetailState extends State<RoomDetail>
                       onChanged: (val) {
                         if (val) {
                           _setAlarm(
-                                  (machine.type == 'W' ? 'Washer ' : 'Dryer ') +
-                                      machine.appliance_desc,
-                                  machine.appliance_desc_key,
+                              context,
+                              (machine.type == 'W' ? 'Washer ' : 'Dryer ') +
                                   machine.appliance_desc,
-                                  machine.time_remaining)
-                              .then((res) {
-                            _showSnackBar(context,
-                                'Alarm set for ${(machine.type == "W" ? "Washer " : "Dryer ") + machine.appliance_desc}');
-                          });
+                              machine.appliance_desc_key,
+                              machine.appliance_desc,
+                              machine.time_remaining);
                         } else {
-                          _removeAlarm(machine.appliance_desc_key).then((res) {
-                            _showSnackBar(context,
-                                'Alarm removed for ${(machine.type == "W" ? "Washer " : "Dryer ") + machine.appliance_desc}');
-                          });
+                          _removeAlarm(
+                              context,
+                              (machine.type == "W" ? "Washer " : "Dryer ") +
+                                  machine.appliance_desc,
+                              machine.appliance_desc_key);
                         }
-                      },
-                      activeTrackColor: Colors.lightGreenAccent,
-                      activeColor: Colors.green)
+                      })])
                   : Container(),
             ]),
           ),
@@ -327,41 +327,66 @@ class RoomDetailState extends State<RoomDetail>
     });
   }
 
+  void updateAlarms() {
+    final Future<Database> dbFuture = databaseHelper.initializeDatabase();
+    dbFuture.then((database) {
+      Future<List<Alarm>> alarmsListFuture = databaseHelper.getAlarms();
+      alarmsListFuture.then((alarmsList) {
+        setState(() {
+          this.alarms = alarmsList;
+        });
+      });
+    });
+  }
+
   _showSnackBar(BuildContext context, String message) {
     final snackBar = SnackBar(content: Text(message));
     Scaffold.of(context).showSnackBar(snackBar);
   }
 
-  Future _setAlarm(String name, String appliance_desc_key,
+  Future _setAlarm(BuildContext context, String name, String appliance_desc_key,
       String appliance_desc, int time_remaining) async {
+    final Future<Database> dbFuture = databaseHelper.initializeDatabase();
     var androidChannel = AndroidNotificationDetails(
         'channel_id', 'channel_name', 'channel_description',
         importance: Importance.Max, priority: Priority.Max);
     var iosChannel = IOSNotificationDetails();
     var platformChannel = NotificationDetails(androidChannel, iosChannel);
+    DateTime end_time =
+        new DateTime.now().add(new Duration(minutes: time_remaining));
     localNotificationsPlugin
-        .schedule(
-            int.parse(appliance_desc_key),
-            '$name is done!',
-            'The laundry in $name is done!',
-            new DateTime.now()
-                .add(new Duration(seconds: 10)), //minutes: time_remaining)),
-            platformChannel)
+        .schedule(int.parse(appliance_desc_key), '$name is done!',
+            'The laundry in $name is done!', end_time, platformChannel)
         .then((res) {
-      setState(() {
-        alarms.add(Alarm(
-            appliance_desc_key,
-            new DateTime.now().add(new Duration(
-                seconds: 10)))); //new Duration(minutes: time_remaining))));
+      dbFuture.then((database) {
+        databaseHelper
+            .insertAlarm(Alarm(appliance_desc_key, end_time))
+            .then((result) {
+          if (result != 0) {
+            _showSnackBar(context, 'Alarm set for $name');
+            updateAlarms();
+          } else {
+            _showSnackBar(
+                context, 'There was a problems setting an alarm for $name');
+          }
+        });
       });
     });
   }
 
-  Future _removeAlarm(String appliance_desc_key) async {
+  Future _removeAlarm(
+      BuildContext context, String name, String appliance_desc_key) async {
+    final Future<Database> dbFuture = databaseHelper.initializeDatabase();
     localNotificationsPlugin.cancel(int.parse(appliance_desc_key)).then((res) {
-      setState(() {
-        alarms.removeWhere((alarm) {
-          return alarm.appliance_desc_key == appliance_desc_key;
+      dbFuture.then((database) {
+        databaseHelper.deleteAlarm(appliance_desc_key).then((result) {
+          if (result != 0) {
+            _showSnackBar(context, 'Alarm removed for $name');
+            updateAlarms();
+          } else {
+            _showSnackBar(
+                context, 'There was a problems removing the alarm for $name');
+          }
         });
       });
     });
