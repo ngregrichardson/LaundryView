@@ -21,6 +21,11 @@ class LocationsState extends State<Locations> {
   List<Location> locations = new List();
   List<Location> filteredLocations = new List();
 
+  String about =
+      'After about a month at college, I got fed up with the LaundryView app I was using. I would continue to get notifications even once the machine had ended, not see when a machine was in "Idle" mode, and a few other things. So I made LaundryTwo with a modern, easy-to-use interface, while still maintaining all the necessary features (and adding some!).';
+  String help =
+      'From the Locations page, you can search for your school/apartment building. Once there, find the laundry room your would like to view. There may only be one for some properties. There you will be able to see each washer and dryer, set an alarm for specific machines, and mark the room as a favorite using the star in the top left.';
+
   LocationsState() {
     _filter.addListener(() {
       if (_filter.text.isEmpty) {
@@ -51,7 +56,7 @@ class LocationsState extends State<Locations> {
         child: Column(children: <Widget>[
           UserAccountsDrawerHeader(
             accountEmail: Text("v1.0"),
-            accountName: Text("LaundryView"),
+            accountName: Text("LaundryTwo"),
           ),
           ListTile(
               leading: Icon(Icons.face),
@@ -61,12 +66,17 @@ class LocationsState extends State<Locations> {
                     context: context,
                     builder: (context) {
                       return SimpleDialog(
-                        title: Text("About LaundryView"),
+                        title: Text("About LaundryTwo",
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
+                            )),
                         children: <Widget>[
                           Padding(
                             padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
                             child: Text(
-                                "After trying out some other LaundryView apps when I got to college, I eventually found some shortcomings to all of them. To fix that, I decided to create my own. Use LaundryView to see laundry progress and get notifications when your laundry is done."),
+                              about,
+                              style: TextStyle(fontSize: 15),
+                            ),
                           ),
                         ],
                       );
@@ -85,7 +95,30 @@ class LocationsState extends State<Locations> {
                 _onSettingsTap(context);
               }),
           Divider(),
-          ListTile(leading: Icon(Icons.help), title: Text("Help")),
+          ListTile(
+              leading: Icon(Icons.help),
+              title: Text("Help"),
+              onTap: () {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return SimpleDialog(
+                        title: Text("LaundryTwo Help",
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
+                            )),
+                        children: <Widget>[
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
+                            child: Text(
+                              help,
+                              style: TextStyle(fontSize: 15),
+                            ),
+                          ),
+                        ],
+                      );
+                    });
+              }),
           ListTile(
             leading: Icon(Icons.email),
             title: Text("Contact us"),

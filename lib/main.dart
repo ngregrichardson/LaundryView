@@ -6,6 +6,7 @@ import 'screens/roomDetail/roomDetail.dart';
 import 'screens/settings/settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
+import 'package:flutter/services.dart';
 
 const LocationsRoute = '/';
 const RoomsRoute = '/rooms';
@@ -50,6 +51,10 @@ class AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     return new DynamicTheme(
         defaultBrightness: Brightness.light,
         data: (brightness) => new ThemeData(
